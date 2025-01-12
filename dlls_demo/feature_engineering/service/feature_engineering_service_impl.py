@@ -5,11 +5,10 @@ from feature_engineering.service.feature_engineering_service import FeatureEngin
 
 class FeatureEngineeringServiceImpl(FeatureEngineeringService):
     def __init__(self):
-        # Repository 인스턴스 생성
         self.featureEngineeringRepository = FeatureEngineeringRepositoryImpl()
         self.preprocessed_data_path = os.getenv("PROCESSED_DATA_PATH", "resource/preprocessed_data.csv")
 
-    async def feature_engineering(self, file_path: str = None):
+    async def featureEngineering(self, file_path: str = None):
         # 기본 데이터 경로 설정
         if file_path is None:
             file_path = os.getenv("RAW_DATA_PATH", "resource/customer_data.csv")
@@ -22,8 +21,6 @@ class FeatureEngineeringServiceImpl(FeatureEngineeringService):
         data = self.featureEngineeringRepository.handleMissingValues(data)
         print("Missing values handled.")
         '''''
-
-
 
         # 새로운 피처 생성
         data = self.featureEngineeringRepository.createNewFeatures(data)
@@ -43,9 +40,8 @@ class FeatureEngineeringServiceImpl(FeatureEngineeringService):
 
 
         # 피처 스케일링
-        X_train_scaled, X_test_scaled = self.featureEngineeringRepository.scaleFeatures(X_train, X_test)
+        X_train, X_test = self.featureEngineeringRepository.scaleFeatures(X_train, X_test)
         print("Features scaled.")
-
 
         # 모델 훈련
         model = self.featureEngineeringRepository.trainModel(X_train, y_train)
@@ -58,6 +54,15 @@ class FeatureEngineeringServiceImpl(FeatureEngineeringService):
         # 실제값 vs 예측값 비교
         comparison = self.featureEngineeringRepository.compareResult(y_test, y_prediction)
         print("Actual vs Predicted comparison created.")
+
+        # Cross Validation
+        cv_scores = self.featureEngineeringRepository.crossValidateModel(model, X_train, y_train)
+        print(f"Cross-Validation Scores: {cv_scores}")
+        print(f"Mean Accuracy: {cv_scores.mean():.4f}")
+
+        # Feature Importance
+        feature_names = X_train.columns if hasattr(X_train, 'columns') else range(X_train.shape[1])
+        self.featureEngineeringRepository.plotFeatureImportance(model, feature_names)
 
         # 결과 반환
         return {

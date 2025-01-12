@@ -3,5 +3,5 @@ from pandas import DataFrame
 
 class FeatureEngineeringService(ABC):
     @abstractmethod
-    def feature_engineering(self, file_path: str) -> (DataFrame, dict):
+    def featureEngineering(self, file_path: str) -> (DataFrame, dict):
         pass

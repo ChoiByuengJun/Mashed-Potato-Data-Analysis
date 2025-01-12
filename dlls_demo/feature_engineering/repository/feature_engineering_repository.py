@@ -41,3 +41,12 @@ class FeatureEngineeringRepository(ABC):
     @abstractmethod
     def compareResult(self, y_test, y_prediction):
         pass
+
+    @abstractmethod
+    def crossValidateModel(self, model, X, y, cv: int = 5):
+        pass
+
+    @abstractmethod
+    def plotFeatureImportance(self, model, feature_names):
+        pass
+

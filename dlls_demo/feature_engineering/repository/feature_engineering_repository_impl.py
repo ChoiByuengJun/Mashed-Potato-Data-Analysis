@@ -1,9 +1,11 @@
 import os
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+import matplotlib.pyplot as plt
+import numpy as np
 from feature_engineering.repository.feature_engineering_repository import FeatureEngineeringRepository
 
 class FeatureEngineeringRepositoryImpl(FeatureEngineeringRepository):
@@ -50,7 +52,6 @@ class FeatureEngineeringRepositoryImpl(FeatureEngineeringRepository):
         print(f"Preprocessed data saved to {file_path}")
 
     def encodeCategoricalFeatures(self, data: pd.DataFrame) -> pd.DataFrame:
-        # One-Hot Encoding using pandas get_dummies
         categorical_columns = data.select_dtypes(include=['object']).columns
         print(f"Encoding these categorical columns: {categorical_columns.tolist()}")
         data = pd.get_dummies(data, columns=categorical_columns, drop_first=True)
@@ -66,9 +67,9 @@ class FeatureEngineeringRepositoryImpl(FeatureEngineeringRepository):
 
     def scaleFeatures(self, X_train, X_test):
         scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
-        return X_train_scaled, X_test_scaled
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+        return X_train, X_test
 
     def trainModel(self, X_train, y_train):
         model = LogisticRegression(class_weight='balanced', random_state=42)
@@ -78,7 +79,7 @@ class FeatureEngineeringRepositoryImpl(FeatureEngineeringRepository):
     def evaluateModel(self, model, X_test, y_test):
         y_prediction = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_prediction)
-        precision = precision_score(y_test, y_prediction, zero_division=0)  # zero_division은 분모가 0일 때 오류 방지
+        precision = precision_score(y_test, y_prediction, zero_division=0)
         recall = recall_score(y_test, y_prediction, zero_division=0)
         f1 = f1_score(y_test, y_prediction, zero_division=0)
         confusion = confusion_matrix(y_test, y_prediction)
@@ -93,6 +94,24 @@ class FeatureEngineeringRepositoryImpl(FeatureEngineeringRepository):
 
         return metrics, y_prediction
 
-
     def compareResult(self, y_test, y_prediction):
         return pd.DataFrame({'Actual': y_test, 'Predicted': y_prediction})
+
+    def crossValidateModel(self, model, X, y, cv=5):
+        scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
+        return scores
+
+    def plotFeatureImportance(self, model, feature_names):
+        if hasattr(model, 'coef_'):
+            importance = np.abs(model.coef_[0])
+            sorted_idx = np.argsort(importance)[::-1]
+            sorted_features = np.array(feature_names)[sorted_idx]
+            sorted_importance = importance[sorted_idx]
+
+            plt.figure(figsize=(10, 6))
+            plt.bar(range(len(sorted_importance)), sorted_importance, tick_label=sorted_features)
+            plt.xticks(rotation=90)
+            plt.title('Feature Importance')
+            plt.xlabel('Features')
+            plt.ylabel('Coefficient Magnitude')
+            plt.show()

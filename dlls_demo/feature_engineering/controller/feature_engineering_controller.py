@@ -18,7 +18,7 @@ async def requestFeatureEngineering(
     print(f"Feature engineering initiated with file: {file_path}")
 
     # Execute feature engineering process
-    featureEngineeringResponse = await featureEngineeringService.feature_engineering(file_path)
+    featureEngineeringResponse = await featureEngineeringService.featureEngineering(file_path)
 
     # Extract and format response
     metrics = featureEngineeringResponse["metrics"]
