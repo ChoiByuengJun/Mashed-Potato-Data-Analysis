@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 class FeatureEngineeringRepository(ABC):
+    '''''
     @abstractmethod
     def handleMissingValues(self, data: pd.DataFrame) -> pd.DataFrame:
         pass
+    '''''
 
     @abstractmethod
     def encodeCategoricalFeatures(self, data: pd.DataFrame) -> (pd.DataFrame, dict):
@@ -15,12 +17,18 @@ class FeatureEngineeringRepository(ABC):
         pass
 
     @abstractmethod
+    def savePreprocessedData(self, data: pd.DataFrame, file_path: str):
+        pass
+
+    @abstractmethod
     def splitTrainTestData(self, data: pd.DataFrame):
         pass
+
 
     @abstractmethod
     def scaleFeatures(self, X_train, X_test):
         pass
+
 
     @abstractmethod
     def trainModel(self, X_train, y_train):
