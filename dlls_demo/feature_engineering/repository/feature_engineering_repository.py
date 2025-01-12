@@ -1,18 +1,25 @@
 from abc import ABC, abstractmethod
-
+import pandas as pd
 
 class FeatureEngineeringRepository(ABC):
-
     @abstractmethod
-    def removeUselessInformation(self, dataFrame):
+    def handleMissingValues(self, data: pd.DataFrame) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def handleMissingValues(self, dataFrame):
+    def encodeCategoricalFeatures(self, data: pd.DataFrame) -> (pd.DataFrame, dict):
         pass
 
     @abstractmethod
-    def splitTrainTestData(self, dataFrame):
+    def createNewFeatures(self, data: pd.DataFrame) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def splitTrainTestData(self, data: pd.DataFrame):
+        pass
+
+    @abstractmethod
+    def scaleFeatures(self, X_train, X_test):
         pass
 
     @abstractmethod
