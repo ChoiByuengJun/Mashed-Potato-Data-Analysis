@@ -16,8 +16,8 @@ class KMeansServiceImpl(KMeansService):
 
         # Preprocessing for different cluster types
         business_columns = ['업종', '회사 규모', '지역']
-        transaction_columns = ['구매 횟수', '평균 거래 금액', '가입 기간']
-        product_columns = ['평점', '평균 거래 주기']
+        transaction_columns = ['구매 횟수', '평균 구매 금액', '가입 기간']
+        product_columns = ['평점', '평균 구매 주기']
 
         # Business Clustering
         business_data = self.repository.preprocessData(data, business_columns)
@@ -42,7 +42,7 @@ class KMeansServiceImpl(KMeansService):
         data.to_csv(output_path, index=False)
 
         # Visualization Example
-        self.visualizeClusters(transaction_data, transaction_labels, "Transaction Clustering", "구매 횟수", "평균 거래 금액")
+        self.visualizeClusters(transaction_data, transaction_labels, "Transaction Clustering", "구매 횟수", "평균 구매 금액")
 
         return {"message": "K-Means clustering completed successfully", "output_path": output_path}
 

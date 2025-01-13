@@ -13,7 +13,7 @@ class PCAServiceImpl:
 
         # 주요 분석 컬럼 정의
         analysis_columns = [
-            '구매 횟수', '평균 거래 금액', '평점', '평균 평점', '가입 기간', '평균 거래 주기'
+            '구매 횟수', '평균 구매 금액', '평점', '평균 평점', '가입 기간', '평균 구매 주기'
         ]
         selected_data = data[analysis_columns]
 
