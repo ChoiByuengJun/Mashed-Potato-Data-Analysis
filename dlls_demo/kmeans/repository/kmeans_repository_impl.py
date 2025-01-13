@@ -1,88 +1,26 @@
-import numpy as np
+import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 from kmeans.repository.kmeans_repository import KMeansRepository
 
-
 class KMeansRepositoryImpl(KMeansRepository):
-    SAMPLE_COUNT = 100
+    def loadData(self, file_path: str) -> pd.DataFrame:
+        return pd.read_csv(file_path)
 
-    def createData(self):
-        return {
-            'AgeGroup': [],
-            'FPS': [],
-            'RPG': [],
-            'Sports': [],
-            'Puzzle': [],
-            'MOBA': [],
-            'Simulation': []
-        }
+    def preprocessData(self, data: pd.DataFrame, columns: list) -> pd.DataFrame:
+        return pd.get_dummies(data[columns], drop_first=True)
 
-    # 무엇을 만들던 0 ~ 10 사이의 정규 분포를 만들게 됨 (이상치는 존재함 범주를 벗어나는)
-    def __generateDataDistribution(self, base, variation, size):
-        return np.clip(np.random.normal(base, variation, size), 0, 10)
-
-    def appendAgeGroup20Data(self, data):
-        for _ in range(self.SAMPLE_COUNT):
-            data['AgeGroup'].append('20s')
-            data['FPS'].append(self.__generateDataDistribution(8, 1.5, 1)[0])
-            data['RPG'].append(self.__generateDataDistribution(7, 2, 1)[0])
-            data['Sports'].append(self.__generateDataDistribution(6, 1, 1)[0])
-            data['Puzzle'].append(self.__generateDataDistribution(4, 2, 1)[0])
-            data['MOBA'].append(self.__generateDataDistribution(9, 1.5, 1)[0])
-            data['Simulation'].append(self.__generateDataDistribution(5, 2, 1)[0])
-
-        return data
-
-    def appendAgeGroup30Data(self, data):
-        for _ in range(self.SAMPLE_COUNT):
-            data['AgeGroup'].append('30s')
-            data['FPS'].append(self.__generateDataDistribution(7, 2, 1)[0])
-            data['RPG'].append(self.__generateDataDistribution(8, 1.5, 1)[0])
-            data['Sports'].append(self.__generateDataDistribution(5, 2, 1)[0])
-            data['Puzzle'].append(self.__generateDataDistribution(6, 1.5, 1)[0])
-            data['MOBA'].append(self.__generateDataDistribution(7, 1, 1)[0])
-            data['Simulation'].append(self.__generateDataDistribution(6, 2, 1)[0])
-
-        return data
-
-    def appendAgeGroup40Data(self, data):
-        for _ in range(self.SAMPLE_COUNT):
-            data['AgeGroup'].append('40s')
-            data['FPS'].append(self.__generateDataDistribution(5, 2, 1)[0])
-            data['RPG'].append(self.__generateDataDistribution(6, 2, 1)[0])
-            data['Sports'].append(self.__generateDataDistribution(7, 1, 1)[0])
-            data['Puzzle'].append(self.__generateDataDistribution(8, 1.5, 1)[0])
-            data['MOBA'].append(self.__generateDataDistribution(4, 1, 1)[0])
-            data['Simulation'].append(self.__generateDataDistribution(8, 1.5, 1)[0])
-
-        return data
-
-    def appendAgeGroup50Data(self, data):
-        for _ in range(self.SAMPLE_COUNT):
-            data['AgeGroup'].append('50s')
-            data['FPS'].append(self.__generateDataDistribution(3, 1.5, 1)[0])
-            data['RPG'].append(self.__generateDataDistribution(5, 2, 1)[0])
-            data['Sports'].append(self.__generateDataDistribution(8, 1, 1)[0])
-            data['Puzzle'].append(self.__generateDataDistribution(9, 1.5, 1)[0])
-            data['MOBA'].append(self.__generateDataDistribution(2, 1, 1)[0])
-            data['Simulation'].append(self.__generateDataDistribution(9, 1, 1)[0])
-
-        return data
-
-    def prepareData(self, dataFrame):
-        return dataFrame[['FPS', 'RPG', 'Sports', 'Puzzle', 'MOBA', 'Simulation']]
-
-    def scaleData(self, data):
+    def scaleData(self, data: pd.DataFrame) -> (pd.DataFrame, object):
         scaler = StandardScaler()
-        scaledX = scaler.fit_transform(data)
+        scaled_data = scaler.fit_transform(data)
+        return scaled_data, scaler
 
-        return scaler, scaledX
+    def performKMeans(self, scaled_data: pd.DataFrame, n_clusters: int) -> (object, list):
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        labels = kmeans.fit_predict(scaled_data)
+        return kmeans, labels
 
-    def trainingKMeans(self, scaledX, dataFrame):
-        kmeans = KMeans(n_clusters=4, random_state=42)
-        dataFrame['Cluster'] = kmeans.fit_predict(scaledX)
-
-        return kmeans, dataFrame
-    
+    def addClusterLabels(self, data: pd.DataFrame, labels: list, cluster_type: str) -> pd.DataFrame:
+        data[f"{cluster_type}_Cluster"] = labels
+        return data

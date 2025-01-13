@@ -1,36 +1,24 @@
 from abc import ABC, abstractmethod
-
+import pandas as pd
 
 class KMeansRepository(ABC):
 
     @abstractmethod
-    def createData(self):
+    def loadData(self, file_path: str) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def appendAgeGroup20Data(self, data):
+    def preprocessData(self, data: pd.DataFrame, columns: list) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def appendAgeGroup30Data(self, data):
+    def scaleData(self, data: pd.DataFrame) -> (pd.DataFrame, object):
         pass
 
     @abstractmethod
-    def appendAgeGroup40Data(self, data):
+    def performKMeans(self, scaled_data: pd.DataFrame, n_clusters: int) -> (object, list):
         pass
 
     @abstractmethod
-    def appendAgeGroup50Data(self, data):
-        pass
-
-    @abstractmethod
-    def prepareData(self, dataFrame):
-        pass
-
-    @abstractmethod
-    def scaleData(self, data):
-        pass
-
-    @abstractmethod
-    def trainingKMeans(self, scaledX, dataFrame):
+    def addClusterLabels(self, data: pd.DataFrame, labels: list, cluster_type: str) -> pd.DataFrame:
         pass

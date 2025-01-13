@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 
-
-class EnsembleMethodService(ABC):
-
+class PCAService(ABC):
     @abstractmethod
-    def ensembleMethod(self):
+    async def performPCA(self):
         pass

@@ -1,44 +1,56 @@
+import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from kmeans.repository.kmeans_repository_impl import KMeansRepositoryImpl
 from kmeans.service.kmeans_service import KMeansService
 
-
 class KMeansServiceImpl(KMeansService):
-
     def __init__(self):
-        self.__kMeansRepository = KMeansRepositoryImpl()
+        self.repository = KMeansRepositoryImpl()
+        self.data_path = os.getenv("PROCESSED_DATA_PATH", "resource/preprocessed_data.csv")
 
     async def requestProcess(self):
-        createdData = self.__kMeansRepository.createData()
-        addOnCreatedData = self.__kMeansRepository.appendAgeGroup20Data(createdData)
-        addOnCreatedData = self.__kMeansRepository.appendAgeGroup30Data(addOnCreatedData)
-        addOnCreatedData = self.__kMeansRepository.appendAgeGroup40Data(addOnCreatedData)
-        addOnCreatedData = self.__kMeansRepository.appendAgeGroup50Data(addOnCreatedData)
+        # Load Data
+        data = self.repository.loadData(self.data_path)
 
-        dataFrame = pd.DataFrame(addOnCreatedData)
+        # Preprocessing for different cluster types
+        business_columns = ['업종', '회사 규모', '지역']
+        transaction_columns = ['구매 횟수', '평균 거래 금액', '가입 기간']
+        product_columns = ['평점', '평균 거래 주기']
 
-        X = self.__kMeansRepository.prepareData(dataFrame)
-        scaler, scaledX = self.__kMeansRepository.scaleData(X)
+        # Business Clustering
+        business_data = self.repository.preprocessData(data, business_columns)
+        scaled_business, _ = self.repository.scaleData(business_data)
+        _, business_labels = self.repository.performKMeans(scaled_business, n_clusters=4)
+        data = self.repository.addClusterLabels(data, business_labels, "Business")
 
-        kmeans, dataFrame = self.__kMeansRepository.trainingKMeans(scaledX, dataFrame)
+        # Transaction Clustering
+        transaction_data = data[transaction_columns]
+        scaled_transaction, _ = self.repository.scaleData(transaction_data)
+        _, transaction_labels = self.repository.performKMeans(scaled_transaction, n_clusters=3)
+        data = self.repository.addClusterLabels(data, transaction_labels, "Transaction")
 
-        print(f"클러스터 중심: {kmeans.cluster_centers_}")
-        print(f"클러스터 별 데이터 개수: {dataFrame['Cluster'].value_counts()}")
+        # Product Clustering
+        product_data = self.repository.preprocessData(data, product_columns)
+        scaled_product, _ = self.repository.scaleData(product_data)
+        _, product_labels = self.repository.performKMeans(scaled_product, n_clusters=5)
+        data = self.repository.addClusterLabels(data, product_labels, "Product")
 
+        # Save Results
+        output_path = os.getenv("CLUSTERED_DATA_PATH", "resource/clustered_data.csv")
+        data.to_csv(output_path, index=False)
+
+        # Visualization Example
+        self.visualizeClusters(transaction_data, transaction_labels, "Transaction Clustering", "구매 횟수", "평균 거래 금액")
+
+        return {"message": "K-Means clustering completed successfully", "output_path": output_path}
+
+    def visualizeClusters(self, data, labels, title, x_column, y_column):
         plt.figure(figsize=(8, 6))
-        plt.scatter(X['FPS'], X['RPG'], c=dataFrame['Cluster'], cmap='viridis', alpha=0.5)
-        centroids = kmeans.cluster_centers_
-        centroids_unscaled = scaler.inverse_transform(centroids)
-
-        plt.scatter(
-            centroids_unscaled[:, 0], centroids_unscaled[:, 1],
-            c='red', marker='x', s=200, label='Centroids'
-        )
-        plt.title("FPS와 RPG기반 K-means 클러스터링")
-        plt.xlabel("FPS")
-        plt.xlabel("RPG")
-        plt.legend()
+        plt.scatter(data[x_column], data[y_column], c=labels, cmap='viridis', alpha=0.5)
+        plt.colorbar(label='Cluster')
+        plt.title(title)
+        plt.xlabel(x_column)
+        plt.ylabel(y_column)
         plt.show()
-

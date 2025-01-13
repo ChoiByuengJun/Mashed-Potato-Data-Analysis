@@ -1,46 +1,71 @@
+import os
 import pandas as pd
-
 from feature_engineering.repository.feature_engineering_repository_impl import FeatureEngineeringRepositoryImpl
 from feature_engineering.service.feature_engineering_service import FeatureEngineeringService
 
-
 class FeatureEngineeringServiceImpl(FeatureEngineeringService):
-    __houseData = {
-        'date': ['2020-01-01', '2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01'],
-        'size': [2000, 1500, 1800, 2200, 1600],
-        'numberOfRooms': [4, 3, 3, 5, 3],
-        'age': [10, 15, 12, 5, 20],
-        'price': [500000, 450000, 480000, 600000, 430000]
-    }
-
     def __init__(self):
-        self.__featureEngineeringRepository = FeatureEngineeringRepositoryImpl()
+        self.featureEngineeringRepository = FeatureEngineeringRepositoryImpl()
+        self.preprocessed_data_path = os.getenv("PROCESSED_DATA_PATH", "resource/preprocessed_data.csv")
 
-    async def featureEngineering(self):
-        # pandas를 사용해서 데이터 프레임화(엑셀화)
-        dataFrame = pd.DataFrame(self.__houseData)
-        # 불 필요한 정보들 제거
-        cleanedDataFrame = self.__featureEngineeringRepository.removeUselessInformation(dataFrame)
-        # 결측치 제거
-        # 값이 없거나 누락 되었거나 잘못된 값이 적혀 있는 경우
-        handledDataFrame = self.__featureEngineeringRepository.handleMissingValues(cleanedDataFrame)
-        # 훈련(학습) / 테스트(검증) 데이터를 분리
-        X_train, X_test, y_train, y_test = (
-            self.__featureEngineeringRepository.splitTrainTestData(handledDataFrame))
-        # 훈련 데이터를 가지고 실제 학습 진행
-        # y = ax + b
-        # y = ax^2 + bx + c
-        # y = ae^bx + c
-        # Fourier Integral(푸리에 적분) 기반인데 이것은 어차피 라이브러리가 알아서 해줌
-        featureEngineeringModel = self.__featureEngineeringRepository.trainModel(X_train, y_train)
-        # 검증 데이터를 가지고 오차와 예측값을 뽑음
-        mseError, y_prediction = self.__featureEngineeringRepository.evaluateModel(
-            featureEngineeringModel, X_test, y_test)
-        print(f"mseError: {mseError}, y_prediction: {y_prediction}")
+    async def featureEngineering(self, file_path: str = None):
+        # 기본 데이터 경로 설정
+        if file_path is None:
+            file_path = os.getenv("RAW_DATA_PATH", "resource/customer_data.csv")
+        print(f"Loading data from: {file_path}")
 
-        # 실제 검증용 데이터와 예측 데이터를 엑셀화
-        comparison = self.__featureEngineeringRepository.compareResult(y_test, y_prediction)
+        # 원본 데이터 로드
+        data = pd.read_csv(file_path)
+        '''''
+        # 결측치 처리
+        data = self.featureEngineeringRepository.handleMissingValues(data)
+        print("Missing values handled.")
+        '''''
+
+        # 새로운 피처 생성
+        data = self.featureEngineeringRepository.createNewFeatures(data)
+        print("New features created.")
+
+        # 전처리된 데이터 저장
+        data.to_csv(self.preprocessed_data_path, index=False)
+        print(f"Preprocessed data saved to: {self.preprocessed_data_path}")
+
+        # 범주형 데이터 인코딩 (원핫 인코딩)
+        data = self.featureEngineeringRepository.encodeCategoricalFeatures(data)
+        print("Categorical features encoded.")
+
+        # 데이터 분리 (학습/테스트)
+        X_train, X_test, y_train, y_test = self.featureEngineeringRepository.splitTrainTestData(data)
+        print("Data split into training and test sets.")
+
+
+        # 피처 스케일링
+        X_train, X_test = self.featureEngineeringRepository.scaleFeatures(X_train, X_test)
+        print("Features scaled.")
+
+        # 모델 훈련
+        model = self.featureEngineeringRepository.trainModel(X_train, y_train)
+        print("Model trained.")
+
+        # 모델 평가
+        metrics, y_prediction = self.featureEngineeringRepository.evaluateModel(model, X_test, y_test)
+        print(f"Model evaluation completed: {metrics}")
+
+        # 실제값 vs 예측값 비교
+        comparison = self.featureEngineeringRepository.compareResult(y_test, y_prediction)
+        print("Actual vs Predicted comparison created.")
+
+        # Cross Validation
+        cv_scores = self.featureEngineeringRepository.crossValidateModel(model, X_train, y_train)
+        print(f"Cross-Validation Scores: {cv_scores}")
+        print(f"Mean Accuracy: {cv_scores.mean():.4f}")
+
+        # Feature Importance
+        feature_names = X_train.columns if hasattr(X_train, 'columns') else range(X_train.shape[1])
+        self.featureEngineeringRepository.plotFeatureImportance(model, feature_names)
+
+        # 결과 반환
         return {
-            "mseError": mseError,
+            "metrics": metrics,
             "comparison": comparison
         }

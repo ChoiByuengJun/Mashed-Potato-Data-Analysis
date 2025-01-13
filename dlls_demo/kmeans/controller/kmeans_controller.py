@@ -11,7 +11,7 @@ kMeansRouter = APIRouter()
 async def injectKMeansService() -> KMeansServiceImpl:
     return KMeansServiceImpl()
 
-@kMeansRouter.post("/kmeans-game")
+@kMeansRouter.post("/kmeans")
 async def requestKMeans(kMeansService: KMeansServiceImpl =
                        Depends(injectKMeansService)):
 
