@@ -9,6 +9,12 @@ class PCARepositoryImpl(PCARepository):
     def loadData(self, file_path: str) -> pd.DataFrame:
         return pd.read_csv(file_path)
 
+    def encodeCategoricalFeatures(self, data: pd.DataFrame) -> pd.DataFrame:
+        categorical_columns = data.select_dtypes(include=['object']).columns
+        print(f"Encoding these categorical columns: {categorical_columns.tolist()}")
+        data = pd.get_dummies(data, columns=categorical_columns, drop_first=True)
+        return data
+
     def scaleData(self, data: pd.DataFrame):
         scaler = StandardScaler()
         scaled_data = scaler.fit_transform(data)
@@ -20,8 +26,8 @@ class PCARepositoryImpl(PCARepository):
         explained_variance = pca.explained_variance_ratio_
         components = pd.DataFrame(
             pca.components_,
-            columns=data_columns,
-            index=[f"PC{i+1}" for i in range(n_components)]
+            columns=data_columns,  # 원래의 컬럼 이름을 사용
+            index=[f"PC{i + 1}" for i in range(n_components)]  # 주성분 개수에 맞는 인덱스 생성
         )
         return pca, transformed_data, explained_variance, components
 

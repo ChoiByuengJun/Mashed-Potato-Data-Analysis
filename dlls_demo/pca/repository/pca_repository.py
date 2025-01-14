@@ -5,6 +5,8 @@ class PCARepository(ABC):
     @abstractmethod
     def loadData(self, file_path: str) -> pd.DataFrame:
         pass
+    def encodeCategoricalFeatures(self, data: pd.DataFrame) -> (pd.DataFrame, dict):
+        pass
 
     @abstractmethod
     def scaleData(self, data: pd.DataFrame):
